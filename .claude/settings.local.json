@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/Santiago/Documents/LocalProjects/**)",
+      "Read(//Users/Santiago/Documents/LocalProjects/linkz/**)"
+    ]
+  }
+}

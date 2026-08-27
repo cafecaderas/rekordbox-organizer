@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>DJ Genre Playlist Bootstrapper</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    line-height: 1.4;
+  }
+  h1 { font-size: 1.4rem; }
+  h1 small { display: block; font-weight: normal; font-size: 0.85rem; opacity: 0.7; }
+  h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+  .panel {
+    border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  input[type=text] {
+    flex: 1;
+    min-width: 160px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.95rem;
+  }
+  button {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button.primary { font-weight: 600; }
+  button.link {
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+  #summary { opacity: 0.75; font-size: 0.9rem; margin: 0.5rem 0 1rem; }
+  .cluster {
+    border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .cluster[data-status=approved] { border-color: #2e8b57; }
+  .cluster[data-status=rejected] { opacity: 0.5; }
+  .cluster-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+  .cluster-name { font-weight: 600; font-size: 1.05rem; border: none; background: transparent; }
+  .cluster-name:focus { outline: 1px solid currentColor; }
+  .count { font-size: 0.85rem; opacity: 0.7; white-space: nowrap; }
+  .labels { font-size: 0.85rem; opacity: 0.85; margin: 0.35rem 0; }
+  .labels .label { display: inline-block; margin: 0.15rem 0.4rem 0.15rem 0; padding: 0.05rem 0.4rem; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 4px; }
+  .preview { font-size: 0.8rem; opacity: 0.6; margin: 0.35rem 0; }
+  .actions { display: flex; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .status-pill { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 999px; border: 1px solid currentColor; opacity: 0.8; }
+  .tax-pill { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 999px; border: 1px solid currentColor; }
+  .tax-pill.unmapped { opacity: 0.6; }
+  .tax-pill.mapped { border-color: #2e8b57; }
+  .tax-pill.partial, .tax-pill.mixed { border-color: #d68910; }
+  select { padding: 0.3rem; max-width: 220px; }
+  #generateResults, #taxGenerateResults { margin-top: 0.75rem; font-size: 0.9rem; }
+  .error { color: #c0392b; }
+  .muted { opacity: 0.65; font-size: 0.85rem; }
+  .tax-tree { margin-top: 0.5rem; }
+  .tax-node { border-left: 2px solid color-mix(in srgb, currentColor 15%, transparent); padding-left: 0.75rem; margin: 0.4rem 0 0.4rem 0.5rem; }
+  .tax-node-row { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+  .tax-name { font-weight: 600; border: none; background: transparent; min-width: 140px; }
+  .tax-name:focus { outline: 1px solid currentColor; }
+  .track-list { margin-top: 0.5rem; border-top: 1px dashed color-mix(in srgb, currentColor 20%, transparent); padding-top: 0.5rem; }
+  .track-row { display: flex; gap: 0.5rem; align-items: center; padding: 0.2rem 0; font-size: 0.85rem; flex-wrap: wrap; }
+  .track-row .track-name { flex: 1; min-width: 160px; }
+  .track-row select { max-width: 180px; }
+</style>
+</head>
+<body>
+  <h1>DJ Genre Playlist Bootstrapper
+    <small>Local. Read-only against Rekordbox. Writes M3U8 files, never master.db.</small>
+  </h1>
+
+  <div class="panel">
+    <div class="row">
+      <input id="xmlFile" type="file" accept=".xml,text/xml,application/xml" style="display:none" onchange="loadXmlFile(this.files[0])" />
+      <button class="primary" onclick="document.getElementById('xmlFile').click()">Choose Rekordbox XML File…</button>
+      <span id="chosenFileName" class="muted"></span>
+    </div>
+    <p class="muted">Export via Rekordbox: File &rarr; Export Collection in xml format, then pick that file here.</p>
+    <div id="loadError" class="error"></div>
+  </div>
+
+  <div class="panel">
+    <h2>My Taxonomy</h2>
+    <p class="muted">Your own personal genre/subgenre hierarchy. Separate from Rekordbox's Genre tag -- Rekordbox's original metadata is never changed. Persists locally between sessions.</p>
+    <div class="row">
+      <input id="newTopCategory" type="text" placeholder="New top-level category, e.g. Afro House" />
+      <button onclick="addTopLevelCategory()">+ Add Category</button>
+    </div>
+    <div id="taxTree" class="tax-tree"></div>
+  </div>
+
+  <div id="summary"></div>
+  <div id="clusters"></div>
+  <div id="unlabeledPanel" class="panel" style="display:none">
+    <h2>Unlabeled tracks</h2>
+    <p class="muted">No Rekordbox genre tag at all, so there's nothing to bulk-map -- pin these individually if you want them organized now. Automatic classification for this group is future work.</p>
+    <div id="unlabeledList"></div>
+  </div>
+
+  <div class="panel" id="generatePanel" style="display:none">
+    <h2>Generate from Rekordbox genre clusters</h2>
+    <div class="row">
+      <input id="outputDir" type="text" placeholder="output" />
+      <button class="primary" onclick="generate()">Generate M3U8 for Approved Clusters</button>
+    </div>
+    <p class="muted" id="outputDirHint"></p>
+    <div id="generateResults"></div>
+  </div>
+
+  <div class="panel" id="taxGeneratePanel" style="display:none">
+    <h2>Generate from My Taxonomy</h2>
+    <p class="muted">One M3U8 per personal category that currently has tracks assigned to it (via cluster mapping and/or per-track overrides above).</p>
+    <div class="row">
+      <input id="taxOutputDir" type="text" placeholder="output" />
+      <button class="primary" onclick="generateFromTaxonomy()">Generate M3U8 from My Taxonomy</button>
+    </div>
+    <div id="taxGenerateResults"></div>
+  </div>
+
+<script>
+let state = { clusters: [], unlabeled_track_count: 0, total_track_count: 0, source_xml_path: "" };
+let taxonomy = { tree: [], flat: [] };
+let unlabeledTracks = [];
+const expandedClusters = new Set();
+const clusterTracksCache = {};
+
+async function api(path, opts) {
+  const res = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || "Request failed");
+  return data;
+}
+
+async function initOutputDir() {
+  const { path } = await api("/api/default-output-dir");
+  for (const id of ["outputDir", "taxOutputDir"]) {
+    const input = document.getElementById(id);
+    input.value = path;
+    input.placeholder = path;
+  }
+  document.getElementById("outputDirHint").textContent = `Playlists will be written to this folder (as absolute paths, regardless of where the server was started from).`;
+}
+
+async function loadTaxonomy() {
+  taxonomy = await api("/api/taxonomy");
+  renderTaxonomy();
+  render(); // cluster cards show taxonomy status/options, so re-render them too
+}
+
+function taxonomyOptionsHtml(excludeIds) {
+  excludeIds = excludeIds || [];
+  return taxonomy.flat
+    .filter(n => !excludeIds.includes(n.id))
+    .map(n => `<option value="${n.id}">${n.path}</option>`)
+    .join("");
+}
+
+function renderTaxonomy() {
+  const container = document.getElementById("taxTree");
+  if (!taxonomy.tree.length) {
+    container.innerHTML = `<p class="muted">No categories yet -- add your first one above.</p>`;
+    return;
+  }
+  container.innerHTML = taxonomy.tree.map(n => renderTaxNode(n)).join("");
+}
+
+function renderTaxNode(node) {
+  const moveOptions = `<option value="">— top level —</option>` + taxonomyOptionsHtml([node.id]);
+  const mergeOptions = taxonomyOptionsHtml([node.id]);
+  const childrenHtml = node.children.map(c => renderTaxNode(c)).join("");
+  return `
+    <div class="tax-node">
+      <div class="tax-node-row">
+        <input class="tax-name" value="${node.name}" onchange="renameTaxNode('${node.id}', this.value)" />
+        <button class="link" onclick="addSubcategory('${node.id}')">+ Subcategory</button>
+        <select id="tax-move-${node.id}">${moveOptions}</select>
+        <button onclick="moveTaxNode('${node.id}')">Move under selected</button>
+        <select id="tax-merge-${node.id}">${mergeOptions}</select>
+        <button onclick="mergeTaxNode('${node.id}')">Merge into selected</button>
+        <button onclick="deleteTaxNode('${node.id}')">Delete</button>
+      </div>
+      ${childrenHtml}
+    </div>
+  `;
+}
+
+async function addTopLevelCategory() {
+  const input = document.getElementById("newTopCategory");
+  const name = input.value.trim();
+  if (!name) return;
+  await api("/api/taxonomy/nodes", { method: "POST", body: JSON.stringify({ name }) });
+  input.value = "";
+  await loadTaxonomy();
+}
+
+async function addSubcategory(parentId) {
+  const name = prompt("New subcategory name:");
+  if (!name || !name.trim()) return;
+  await api("/api/taxonomy/nodes", { method: "POST", body: JSON.stringify({ name: name.trim(), parent_id: parentId }) });
+  await loadTaxonomy();
+}
+
+async function renameTaxNode(id, name) {
+  await api(`/api/taxonomy/nodes/${id}/rename`, { method: "POST", body: JSON.stringify({ name }) });
+  await loadTaxonomy();
+}
+
+async function moveTaxNode(id) {
+  const select = document.getElementById(`tax-move-${id}`);
+  const parent_id = select.value || null;
+  try {
+    await api(`/api/taxonomy/nodes/${id}/move`, { method: "POST", body: JSON.stringify({ parent_id }) });
+    await loadTaxonomy();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function mergeTaxNode(sourceId) {
+  const select = document.getElementById(`tax-merge-${sourceId}`);
+  const targetId = select.value;
+  if (!targetId) return;
+  try {
+    await api("/api/taxonomy/merge", { method: "POST", body: JSON.stringify({ source_id: sourceId, target_id: targetId }) });
+    await loadTaxonomy();
+    await refresh();
+    await loadUnlabeledTracks();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function deleteTaxNode(id) {
+  try {
+    await api(`/api/taxonomy/nodes/${id}/delete`, { method: "POST", body: JSON.stringify({ cascade: false }) });
+  } catch (e) {
+    const wantsCascade = confirm(
+      "This category has subcategories. Delete it and all of them? Any tracks assigned to them will become unassigned."
+    );
+    if (!wantsCascade) return;
+    await api(`/api/taxonomy/nodes/${id}/delete`, { method: "POST", body: JSON.stringify({ cascade: true }) });
+  }
+  await loadTaxonomy();
+  await refresh();
+  await loadUnlabeledTracks();
+}
+
+async function loadXmlFile(file) {
+  if (!file) return;
+  document.getElementById("chosenFileName").textContent = file.name;
+  document.getElementById("loadError").textContent = "";
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    const res = await fetch("/api/load-upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Request failed");
+    state = data;
+    expandedClusters.clear();
+    render();
+    await loadUnlabeledTracks();
+  } catch (e) {
+    document.getElementById("loadError").textContent = e.message;
+  }
+}
+
+async function refresh() {
+  state = await api("/api/clusters");
+  render();
+}
+
+async function loadUnlabeledTracks() {
+  const data = await api("/api/unlabeled-tracks");
+  unlabeledTracks = data.tracks;
+  renderUnlabeled();
+}
+
+function renderUnlabeled() {
+  const panel = document.getElementById("unlabeledPanel");
+  if (!unlabeledTracks.length) {
+    panel.style.display = "none";
+    return;
+  }
+  panel.style.display = "block";
+  document.getElementById("unlabeledList").innerHTML = unlabeledTracks.map(t => trackRowHtml(t)).join("");
+}
+
+function trackRowHtml(t) {
+  const assignedPill = t.taxonomy_node_id
+    ? `<span class="tax-pill mapped">${t.taxonomy_path}${t.has_override ? " (override)" : ""}</span>`
+    : `<span class="tax-pill unmapped">unassigned</span>`;
+  const options = taxonomyOptionsHtml([]);
+  return `
+    <div class="track-row">
+      <span class="track-name">${t.name}${t.artist ? " — " + t.artist : ""}</span>
+      ${assignedPill}
+      <select id="track-assign-${t.track_id}">${options}</select>
+      <button onclick="assignTrack('${t.track_id}')">Assign</button>
+      ${t.has_override ? `<button class="link" onclick="unassignTrack('${t.track_id}')">Clear override</button>` : ""}
+    </div>
+  `;
+}
+
+async function assignTrack(trackId) {
+  const select = document.getElementById(`track-assign-${trackId}`);
+  const node_id = select.value;
+  if (!node_id) return;
+  await api(`/api/tracks/${trackId}/assign-taxonomy`, { method: "POST", body: JSON.stringify({ node_id }) });
+  await loadUnlabeledTracks();
+  await refreshExpandedClusterTracks();
+}
+
+async function unassignTrack(trackId) {
+  await api(`/api/tracks/${trackId}/unassign-taxonomy`, { method: "POST" });
+  await loadUnlabeledTracks();
+  await refreshExpandedClusterTracks();
+}
+
+async function refreshExpandedClusterTracks() {
+  for (const clusterId of expandedClusters) {
+    clusterTracksCache[clusterId] = (await api(`/api/clusters/${clusterId}/tracks`)).tracks;
+  }
+  render();
+}
+
+function render() {
+  document.getElementById("summary").textContent =
+    `Loaded: ${state.source_xml_path} — ${state.total_track_count} tracks total — ${state.clusters.length} genre clusters — ${state.unlabeled_track_count} unlabeled (blank/Unknown genre, not clustered)`;
+
+  const container = document.getElementById("clusters");
+  container.innerHTML = "";
+  const mergeOptions = state.clusters.map(c => `<option value="${c.id}">${c.canonical_name}</option>`).join("");
+
+  for (const c of state.clusters) {
+    const div = document.createElement("div");
+    div.className = "cluster";
+    div.dataset.status = c.status;
+
+    const labelsHtml = c.raw_labels.map(l =>
+      `<span class="label" title="${(c.reasons[l] || '').replace(/"/g, '&quot;')}">${l}${c.raw_labels.length > 1 ? ` <a href="#" onclick="splitLabel('${c.id}','${l.replace(/'/g, "\\'")}');return false;" title="Split out">✂</a>` : ""}</span>`
+    ).join(" ");
+
+    const previewHtml = c.preview_tracks.length
+      ? `e.g. ${c.preview_tracks.join(", ")}${c.track_count > c.preview_tracks.length ? ", …" : ""}`
+      : "";
+
+    const tax = c.taxonomy;
+    const taxLabel = tax.status === "unmapped" ? "unassigned"
+      : tax.status === "mapped" ? tax.path
+      : tax.status === "partial" ? `${tax.path} (partial)`
+      : "mixed categories";
+    const taxPillHtml = `<span class="tax-pill ${tax.status}">${taxLabel}</span>`;
+    const isExpanded = expandedClusters.has(c.id);
+    const trackListHtml = isExpanded ? renderClusterTracks(c.id) : "";
+
+    div.innerHTML = `
+      <div class="cluster-head">
+        <input class="cluster-name" value="${c.canonical_name}" onchange="rename('${c.id}', this.value)" />
+        <span class="count">${c.track_count} tracks &middot; <span class="status-pill">${c.status}</span></span>
+      </div>
+      <div class="labels">${labelsHtml}</div>
+      <div class="preview">${previewHtml}</div>
+      <div class="actions">
+        <button onclick="setStatus('${c.id}','approved')">Approve</button>
+        <button onclick="setStatus('${c.id}','rejected')">Reject</button>
+        <button onclick="setStatus('${c.id}','pending')">Reset</button>
+        <select id="mergeTarget-${c.id}">${mergeOptions}</select>
+        <button onclick="mergeInto('${c.id}')">Merge selected into this</button>
+      </div>
+      <div class="actions">
+        <span>Personal category:</span> ${taxPillHtml}
+        <select id="cluster-assign-${c.id}">${taxonomyOptionsHtml([])}</select>
+        <button onclick="assignCluster('${c.id}')">Assign</button>
+        ${tax.status !== "unmapped" ? `<button class="link" onclick="unassignCluster('${c.id}')">Clear</button>` : ""}
+        <button class="link" onclick="toggleClusterTracks('${c.id}')">${isExpanded ? "Hide" : "Review"} tracks (${c.track_count})</button>
+      </div>
+      <div class="track-list" id="track-list-${c.id}">${trackListHtml}</div>
+    `;
+    container.appendChild(div);
+  }
+
+  document.getElementById("generatePanel").style.display = state.clusters.length ? "block" : "none";
+  document.getElementById("taxGeneratePanel").style.display = state.clusters.length ? "block" : "none";
+}
+
+function renderClusterTracks(clusterId) {
+  const tracks = clusterTracksCache[clusterId];
+  if (!tracks) return `<p class="muted">Loading…</p>`;
+  return tracks.map(t => trackRowHtml(t)).join("");
+}
+
+async function toggleClusterTracks(clusterId) {
+  if (expandedClusters.has(clusterId)) {
+    expandedClusters.delete(clusterId);
+  } else {
+    expandedClusters.add(clusterId);
+    clusterTracksCache[clusterId] = (await api(`/api/clusters/${clusterId}/tracks`)).tracks;
+  }
+  render();
+}
+
+async function rename(id, name) {
+  await api(`/api/clusters/${id}/rename`, { method: "POST", body: JSON.stringify({ name }) });
+  await refresh();
+}
+
+async function setStatus(id, status) {
+  await api(`/api/clusters/${id}/status`, { method: "POST", body: JSON.stringify({ status }) });
+  await refresh();
+}
+
+async function splitLabel(id, raw_label) {
+  await api(`/api/clusters/${id}/split`, { method: "POST", body: JSON.stringify({ raw_label }) });
+  await refresh();
+}
+
+async function mergeInto(targetId) {
+  const select = document.getElementById(`mergeTarget-${targetId}`);
+  const sourceId = select.value;
+  if (!sourceId || sourceId === targetId) return;
+  await api("/api/clusters/merge", { method: "POST", body: JSON.stringify({ cluster_id_a: targetId, cluster_id_b: sourceId }) });
+  await refresh();
+}
+
+async function assignCluster(clusterId) {
+  const select = document.getElementById(`cluster-assign-${clusterId}`);
+  const node_id = select.value;
+  if (!node_id) return;
+  await api(`/api/clusters/${clusterId}/assign-taxonomy`, { method: "POST", body: JSON.stringify({ node_id }) });
+  if (expandedClusters.has(clusterId)) {
+    clusterTracksCache[clusterId] = (await api(`/api/clusters/${clusterId}/tracks`)).tracks;
+  }
+  await refresh();
+}
+
+async function unassignCluster(clusterId) {
+  await api(`/api/clusters/${clusterId}/unassign-taxonomy`, { method: "POST" });
+  if (expandedClusters.has(clusterId)) {
+    clusterTracksCache[clusterId] = (await api(`/api/clusters/${clusterId}/tracks`)).tracks;
+  }
+  await refresh();
+}
+
+async function generate() {
+  const output_dir = document.getElementById("outputDir").value.trim() || "output";
+  const resultsEl = document.getElementById("generateResults");
+  resultsEl.textContent = "Generating…";
+  try {
+    const data = await api("/api/generate", { method: "POST", body: JSON.stringify({ output_dir }) });
+    resultsEl.innerHTML = data.generated.map(r =>
+      r.error
+        ? `<div class="error">${r.canonical_name}: ${r.error}</div>`
+        : `<div>${r.canonical_name}: wrote ${r.track_count} tracks to <code>${r.file_path}</code>${r.skipped_count ? ` (${r.skipped_count} skipped, no file path)` : ""}</div>`
+    ).join("") + `<p class="muted">Now in Rekordbox: File &rarr; Import &rarr; Import Playlist, and select the generated .m3u8 file(s).</p>`;
+  } catch (e) {
+    resultsEl.innerHTML = `<div class="error">${e.message}</div>`;
+  }
+}
+
+async function generateFromTaxonomy() {
+  const output_dir = document.getElementById("taxOutputDir").value.trim() || "output";
+  const resultsEl = document.getElementById("taxGenerateResults");
+  resultsEl.textContent = "Generating…";
+  try {
+    const data = await api("/api/taxonomy/generate", { method: "POST", body: JSON.stringify({ output_dir }) });
+    resultsEl.innerHTML = data.generated.map(r =>
+      `<div>${r.path}: wrote ${r.track_count} tracks to <code>${r.file_path}</code></div>`
+    ).join("") + `<p class="muted">Now in Rekordbox: File &rarr; Import &rarr; Import Playlist, and select the generated .m3u8 file(s).</p>`;
+  } catch (e) {
+    resultsEl.innerHTML = `<div class="error">${e.message}</div>`;
+  }
+}
+
+initOutputDir();
+loadTaxonomy();
+</script>
+</body>
+</html>

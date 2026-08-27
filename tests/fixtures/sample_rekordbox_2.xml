@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<DJ_PLAYLISTS Version="1.0.0">
+  <PRODUCT Name="rekordbox" Version="7.0.5" Company="Pioneer DJ"/>
+  <COLLECTION Entries="5">
+    <TRACK TrackID="101" Name="Wax Museum" Artist="Ferro" Genre="Deep House" Kind="MP3 File" AverageBpm="122.00" Tonality="Fm" Rating="0" PlayCount="4" Location="file://localhost/Users/dj/Music/Deep/Wax%20Museum.mp3"/>
+    <TRACK TrackID="102" Name="Low Tide" Artist="Ferro" Genre="Deephouse" Kind="MP3 File" AverageBpm="122.00" Tonality="Fm" Rating="0" PlayCount="1" Location="file://localhost/Users/dj/Music/Deep/Low%20Tide.mp3"/>
+    <TRACK TrackID="103" Name="Signal Loss" Artist="Verren" Genre="Deep" Kind="MP3 File" AverageBpm="121.00" Tonality="Cm" Rating="0" PlayCount="0" Location="file://localhost/Users/dj/Music/Deep/Signal%20Loss.mp3"/>
+    <TRACK TrackID="104" Name="Basalt" Artist="Kova" Genre="Dub Techno" Kind="MP3 File" AverageBpm="118.00" Tonality="Am" Rating="0" PlayCount="7" Location="file://localhost/Users/dj/Music/Dub/Basalt.mp3"/>
+    <TRACK TrackID="105" Name="Halide" Artist="Kova" Genre="Dub-Techno" Kind="MP3 File" AverageBpm="119.00" Tonality="Am" Rating="0" PlayCount="2" Location="file://localhost/Users/dj/Music/Dub/Halide.mp3"/>
+  </COLLECTION>
+  <PLAYLISTS>
+    <NODE Type="0" Name="ROOT" Count="0">
+    </NODE>
+  </PLAYLISTS>
+</DJ_PLAYLISTS>

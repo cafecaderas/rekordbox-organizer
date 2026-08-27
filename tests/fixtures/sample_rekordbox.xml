@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<DJ_PLAYLISTS Version="1.0.0">
+  <PRODUCT Name="rekordbox" Version="7.0.5" Company="Pioneer DJ"/>
+  <COLLECTION Entries="10">
+    <TRACK TrackID="1" Name="Sundown" Artist="Nomad" Genre="Afro House" Kind="MP3 File" AverageBpm="122.00" Tonality="Fm" Rating="0" PlayCount="12" Location="file://localhost/Users/dj/Music/Afro/Sundown.mp3"/>
+    <TRACK TrackID="2" Name="Baobab" Artist="Kito" Genre="Afrohouse" Kind="MP3 File" AverageBpm="121.00" Tonality="Gm" Rating="0" PlayCount="3" Location="file://localhost/Users/dj/Music/Afro/Baobab.mp3"/>
+    <TRACK TrackID="3" Name="Savannah Nights" Artist="Zulu Trace" Genre="Afro-House" Kind="MP3 File" AverageBpm="123.00" Tonality="Am" Rating="0" PlayCount="0" Location="file://localhost/Users/dj/Music/Afro/Savannah%20Nights.mp3"/>
+    <TRACK TrackID="4" Name="River Walk" Artist="Tando" Genre="Afro" Kind="MP3 File" AverageBpm="120.00" Tonality="Cm" Rating="0" PlayCount="5" Location="file://localhost/Users/dj/Music/Afro/River%20Walk.mp3"/>
+    <TRACK TrackID="5" Name="Glasshouse" Artist="Nordlicht" Genre="Melodic House" Kind="MP3 File" AverageBpm="124.00" Tonality="Dm" Rating="0" PlayCount="20" Location="file://localhost/Users/dj/Music/Melodic/Glasshouse.mp3"/>
+    <TRACK TrackID="6" Name="Aurora" Artist="Solveig" Genre="Melodic" Kind="MP3 File" AverageBpm="124.00" Tonality="Dm" Rating="0" PlayCount="8" Location="file://localhost/Users/dj/Music/Melodic/Aurora.mp3"/>
+    <TRACK TrackID="7" Name="Undertow" Artist="Karman" Genre="Techno" Kind="MP3 File" AverageBpm="128.00" Tonality="Am" Rating="0" PlayCount="15" Location="file://localhost/Users/dj/Music/Techno/Undertow.mp3"/>
+    <TRACK TrackID="8" Name="Concrete" Artist="Voss" Genre="Techno" Kind="MP3 File" AverageBpm="130.00" Tonality="Fm" Rating="0" PlayCount="9" Location="file://localhost/Users/dj/Music/Techno/Concrete.mp3"/>
+    <TRACK TrackID="9" Name="No Signal" Artist="Ehrenreich" Genre="Unknown" Kind="MP3 File" AverageBpm="126.00" Tonality="Bm" Rating="0" PlayCount="0" Location="file://localhost/Users/dj/Music/Misc/No%20Signal.mp3"/>
+    <TRACK TrackID="10" Name="Deep Cover" Artist="Halden" Genre="" Kind="MP3 File" AverageBpm="119.00" Tonality="Em" Rating="0" PlayCount="1" Location="file://localhost/Users/dj/Music/Misc/Deep%20Cover.mp3"/>
+  </COLLECTION>
+  <PLAYLISTS>
+    <NODE Type="0" Name="ROOT" Count="0">
+    </NODE>
+  </PLAYLISTS>
+</DJ_PLAYLISTS>
